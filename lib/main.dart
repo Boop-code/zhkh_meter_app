@@ -1,9 +1,17 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'screens/home_screen.dart';
+import 'viewmodels/home_view_model.dart';
 
 void main() {
-  runApp(const ZhkhMeterApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => HomeViewModel(),
+      child: const ZhkhMeterApp(),
+    ),
+  );
 }
 
 class ZhkhMeterApp extends StatelessWidget {
@@ -11,22 +19,19 @@ class ZhkhMeterApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF176B5B);
-
     return MaterialApp(
       title: 'Мои счётчики',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-          primary: primaryColor,
-          surface: const Color(0xFFF7F9F8),
+          seedColor: const Color(0xFF2878E5),
+          brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF7F9F8),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FB),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF7F9F8),
-          foregroundColor: Color(0xFF18332E),
+          backgroundColor: Color(0xFFF5F7FB),
+          foregroundColor: Color(0xFF172033),
           elevation: 0,
           centerTitle: false,
         ),
@@ -36,9 +41,6 @@ class ZhkhMeterApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
         ),
       ),
       home: const HomeScreen(),

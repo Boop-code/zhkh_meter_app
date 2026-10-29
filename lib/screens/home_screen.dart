@@ -1,102 +1,24 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/meter.dart';
+import '../viewmodels/home_view_model.dart';
 import '../widgets/consumption_chart.dart';
 import '../widgets/meter_card.dart';
+import 'meter_details_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  ResourceType _selectedType = ResourceType.all;
-
-  // Демонстрационные данные для первого этапа.
-  // Позже заменим их данными из локальной базы.
-  final List<Meter> _meters = [
-    Meter(
-      id: '1',
-      name: 'Холодная вода',
-      type: ResourceType.water,
-      number: 'ВХ-102458',
-      lastReading: 128.45,
-      previousReading: 125.20,
-      lastSubmission: DateTime(2026, 10, 25),
-      tariff: 45.20,
-      monthlyConsumption: [2.8, 3.1, 2.6, 3.4, 3.0, 3.25],
-    ),
-    Meter(
-      id: '2',
-      name: 'Горячая вода',
-      type: ResourceType.water,
-      number: 'ВГ-102459',
-      lastReading: 76.80,
-      previousReading: 74.10,
-      lastSubmission: DateTime(2026, 10, 25),
-      tariff: 210.50,
-      monthlyConsumption: [2.1, 2.4, 2.2, 2.8, 2.5, 2.7],
-    ),
-    Meter(
-      id: '3',
-      name: 'Газ',
-      type: ResourceType.gas,
-      number: 'ГС-208731',
-      lastReading: 542.60,
-      previousReading: 537.10,
-      lastSubmission: DateTime(2026, 10, 24),
-      tariff: 8.20,
-      monthlyConsumption: [4.8, 5.2, 4.9, 5.6, 5.1, 5.5],
-    ),
-    Meter(
-      id: '4',
-      name: 'Электричество',
-      type: ResourceType.electricity,
-      number: 'ЭЛ-604821',
-      lastReading: 2486.30,
-      previousReading: 2362.80,
-      lastSubmission: DateTime(2026, 10, 26),
-      tariff: 6.50,
-      monthlyConsumption: [105, 118, 112, 121, 116, 123.5],
-    ),
-  ];
-
-  List<Meter> get _filteredMeters {
-    if (_selectedType == ResourceType.all) {
-      return _meters;
-    }
-
-    return _meters.where((meter) => meter.type == _selectedType).toList();
-  }
-
-  double get _totalEstimatedCost {
-    return _filteredMeters.fold(0, (sum, meter) => sum + meter.estimatedCost);
-  }
-
   String _formatMoney(double value) {
-    final parts = value.toStringAsFixed(2).split('.');
-    final integerPart = parts[0];
-    final buffer = StringBuffer();
-
-    for (var i = 0; i < integerPart.length; i++) {
-      if (i > 0 && (integerPart.length - i) % 3 == 0) {
-        buffer.write(' ');
-      }
-
-      buffer.write(integerPart[i]);
-    }
-
-    return '${buffer.toString()},${parts[1]}';
+    return '${value.toStringAsFixed(2).replaceAll('.', ',')} ₽';
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredMeters = _filteredMeters;
-    final selectedChartMeter = filteredMeters.isNotEmpty
-        ? filteredMeters.first
-        : null;
+    final viewModel = context.watch<HomeViewModel>();
+    final meters = viewModel.filteredMeters;
 
     return Scaffold(
       appBar: AppBar(
@@ -104,29 +26,30 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'МОЙ ДОМ',
+              'Учёт ресурсов',
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2,
-                color: Color(0xFF176B5B),
+                fontSize: 23,
+                fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: 3),
             Text(
-              'Учёт ресурсов',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+              'Ваши приборы учёта ЖКХ',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.normal,
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
-        toolbarHeight: 76,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: CircleAvatar(
-              backgroundColor: const Color(0xFFE2F1EB),
+              backgroundColor: const Color(0xFFE5EEFF),
               child: Icon(
-                Icons.home_rounded,
+                Icons.person_outline,
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
@@ -135,37 +58,71 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             _buildWelcome(),
-            const SizedBox(height: 22),
-            _buildSummary(),
-            const SizedBox(height: 26),
+            const SizedBox(height: 20),
+            _buildSummary(viewModel),
+            const SizedBox(height: 24),
             _buildSectionHeader(
               title: 'Мои счётчики',
-              subtitle: '${filteredMeters.length} прибора учёта',
+              subtitle: '${viewModel.metersCount} прибора учёта',
             ),
-            const SizedBox(height: 14),
-            _buildFilters(),
-            const SizedBox(height: 14),
-            ...filteredMeters.map(
-              (meter) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: MeterCard(
-                  meter: meter,
-                  onTap: () => _showMeterInfo(meter),
+            const SizedBox(height: 12),
+            _buildFilters(context, viewModel),
+            const SizedBox(height: 16),
+            if (meters.isEmpty)
+              _buildEmptyState()
+            else
+              ...meters.map(
+                    (meter) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: MeterCard(
+                    meter: meter,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => MeterDetailsScreen(meter: meter),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
             _buildSectionHeader(
-              title: 'Потребление',
-              subtitle: 'Динамика за 6 месяцев',
+              title: 'История потребления',
+              subtitle: 'Динамика по последним месяцам',
             ),
-            const SizedBox(height: 14),
-            if (selectedChartMeter != null)
-              ConsumptionChart(meter: selectedChartMeter),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
+            if (meters.isNotEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        meters.first.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        height: 220,
+                        child: ConsumptionChart(
+                          meter: meters.first,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              _buildEmptyState(),
+            const SizedBox(height: 16),
             _buildNotice(),
           ],
         ),
@@ -177,49 +134,40 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF176B5B),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF2878E5),
+            Color(0xFF55A0F5),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      child: Row(
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Коммунальные расходы',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 9),
-                Text(
-                  '${_formatMoney(_totalEstimatedCost)} ₽',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Предварительная оценка за период',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+          Icon(
+            Icons.home_work_outlined,
+            color: Colors.white,
+            size: 32,
+          ),
+          SizedBox(height: 14),
+          Text(
+            'Контролируйте расходы',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 8),
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
+          SizedBox(height: 8),
+          Text(
+            'Все показания и расходы на коммунальные ресурсы в одном месте.',
+            style: TextStyle(
               color: Colors.white,
-              size: 30,
+              fontSize: 14,
+              height: 1.5,
             ),
           ),
         ],
@@ -227,43 +175,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSummary() {
-    final waterCount = _meters
-        .where((meter) => meter.type == ResourceType.water)
-        .length;
-    final gasCount = _meters
-        .where((meter) => meter.type == ResourceType.gas)
-        .length;
-    final electricityCount = _meters
-        .where((meter) => meter.type == ResourceType.electricity)
-        .length;
-
+  Widget _buildSummary(HomeViewModel viewModel) {
     return Row(
       children: [
         Expanded(
           child: _summaryItem(
-            icon: Icons.water_drop_rounded,
-            label: 'Вода',
-            count: waterCount,
-            color: ResourceType.water.color,
+            icon: Icons.speed_outlined,
+            title: 'Приборы',
+            value: '${viewModel.metersCount}',
+            subtitle: 'в выбранной категории',
+            color: const Color(0xFF2878E5),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: _summaryItem(
-            icon: Icons.local_fire_department_rounded,
-            label: 'Газ',
-            count: gasCount,
-            color: ResourceType.gas.color,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _summaryItem(
-            icon: Icons.bolt_rounded,
-            label: 'Свет',
-            count: electricityCount,
-            color: ResourceType.electricity.color,
+            icon: Icons.payments_outlined,
+            title: 'Расходы',
+            value: _formatMoney(viewModel.totalEstimatedCost),
+            subtitle: 'предварительно',
+            color: const Color(0xFF15966B),
           ),
         ),
       ],
@@ -272,32 +203,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _summaryItem({
     required IconData icon,
-    required String label,
-    required int count,
+    required String title,
+    required String value,
+    required String subtitle,
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 25),
-          const SizedBox(height: 8),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(height: 12),
           Text(
-            '$count',
+            title,
             style: const TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF18332E),
+              color: Colors.grey,
+              fontSize: 13,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 5),
           Text(
-            label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 11,
+            ),
           ),
         ],
       ),
@@ -308,62 +259,69 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF18332E),
-            ),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.bold,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           subtitle,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.grey,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(
+      BuildContext context,
+      HomeViewModel viewModel,
+      ) {
+    const resourceTypes = [
+      ResourceType.all,
+      ResourceType.water,
+      ResourceType.gas,
+      ResourceType.electricity,
+    ];
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: ResourceType.values.map((type) {
-          final selected = type == _selectedType;
+        children: resourceTypes.map((type) {
+          final isSelected = viewModel.selectedType == type;
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
               label: Text(type.title),
+              selected: isSelected,
               avatar: Icon(
                 type.icon,
-                size: 17,
-                color: selected ? Colors.white : type.color,
+                size: 18,
+                color: isSelected ? Colors.white : type.color,
               ),
-              selected: selected,
-              showCheckmark: false,
-              selectedColor: const Color(0xFF176B5B),
+              selectedColor: Theme.of(context).colorScheme.primary,
               backgroundColor: Colors.white,
               labelStyle: TextStyle(
-                color: selected ? Colors.white : const Color(0xFF354943),
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+                color: isSelected
+                    ? Colors.white
+                    : const Color(0xFF263247),
+                fontWeight: FontWeight.w500,
               ),
               side: BorderSide(
-                color: selected
-                    ? const Color(0xFF176B5B)
-                    : const Color(0xFFE6ECE9),
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : const Color(0xFFE5E9F0),
               ),
-              onSelected: (_) {
-                setState(() {
-                  _selectedType = type;
-                });
-              },
+              onSelected: (_) => viewModel.selectResource(type),
             ),
           );
         }).toList(),
@@ -371,112 +329,55 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNotice() {
+  Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFFE7F2ED),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: const Column(
         children: [
-          Icon(Icons.info_outline_rounded, color: Color(0xFF176B5B)),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Суммы рассчитаны по демонстрационным тарифам. '
-              'Фактическая стоимость может отличаться от начислений '
-              'поставщика коммунальных услуг.',
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.5,
-                color: Color(0xFF315D50),
-              ),
-            ),
+          Icon(
+            Icons.search_off_outlined,
+            size: 42,
+            color: Colors.grey,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Нет приборов в этой категории',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 
-  void _showMeterInfo(Meter meter) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: Colors.white,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(meter.type.icon, color: meter.type.color, size: 30),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      meter.name,
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _detailRow('Тип ресурса', meter.type.title),
-              _detailRow('Номер счётчика', meter.number),
-              _detailRow(
-                'Предыдущее показание',
-                '${meter.previousReading.toStringAsFixed(2)} '
-                    '${meter.type.unit}',
-              ),
-              _detailRow(
-                'Последнее показание',
-                '${meter.lastReading.toStringAsFixed(2)} '
-                    '${meter.type.unit}',
-              ),
-              _detailRow(
-                'Расход за период',
-                '${meter.consumption.toStringAsFixed(2)} '
-                    '${meter.type.unit}',
-              ),
-              _detailRow(
-                'Расчётная стоимость',
-                '${meter.estimatedCost.toStringAsFixed(2)} ₽',
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Подробная история показаний и сканирование '
-                'камерой будут добавлены на следующих этапах.',
-                style: TextStyle(color: Colors.black54, height: 1.5),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
+  Widget _buildNotice() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF2FF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(label, style: const TextStyle(color: Colors.black54)),
+          Icon(
+            Icons.info_outline,
+            color: Color(0xFF2878E5),
           ),
-          const SizedBox(width: 12),
-          Flexible(
+          SizedBox(width: 12),
+          Expanded(
             child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              'Суммы рассчитаны по демонстрационным показаниям и тарифам. '
+                  'Они могут отличаться от фактических начислений.',
+              style: TextStyle(
+                color: Color(0xFF304B70),
+                fontSize: 13,
+                height: 1.45,
+              ),
             ),
           ),
         ],
