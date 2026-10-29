@@ -6,6 +6,7 @@ import '../models/meter.dart';
 import '../viewmodels/home_view_model.dart';
 import '../widgets/consumption_chart.dart';
 import '../widgets/meter_card.dart';
+import 'add_meter_dialog.dart';
 import 'meter_details_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -43,22 +44,15 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFFE5EEFF),
-              child: Icon(
-                Icons.person_outline,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddMeterDialog(context, viewModel),
+        icon: const Icon(Icons.add),
+        label: const Text('Добавить счётчик'),
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
           children: [
             _buildWelcome(),
             const SizedBox(height: 20),
@@ -71,31 +65,44 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _buildFilters(context, viewModel),
             const SizedBox(height: 16),
-            if (meters.isEmpty)
-              _buildEmptyState()
-            else
-              ...meters.map(
-                    (meter) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: MeterCard(
-                    meter: meter,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => MeterDetailsScreen(meter: meter),
-                        ),
-                      );
-                    },
+            if (viewModel.isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (viewModel.errorMessage != null)
+              _buildError(viewModel.errorMessage!, viewModel)
+            else if (meters.isEmpty)
+                _buildEmptyState()
+              else
+                ...meters.map(
+                      (meter) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: MeterCard(
+                      meter: meter,
+                      onTap: () async {
+                        await Navigator.of(context).push<void>(
+                          MaterialPageRoute<void>(
+                            builder: (_) => MeterDetailsScreen(meter: meter),
+                          ),
+                        );
+
+                        if (context.mounted) {
+                          await viewModel.loadMeters();
+                        }
+                      },
+                    ),
                   ),
                 ),
-              ),
             const SizedBox(height: 12),
             _buildSectionHeader(
               title: 'История потребления',
-              subtitle: 'Динамика по последним месяцам',
+              subtitle: 'Динамика по последним показаниям',
             ),
             const SizedBox(height: 12),
-            if (meters.isNotEmpty)
+            if (meters.isNotEmpty && !viewModel.isLoading)
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -112,9 +119,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                       SizedBox(
                         height: 220,
-                        child: ConsumptionChart(
-                          meter: meters.first,
-                        ),
+                        child: ConsumptionChart(meter: meters.first),
                       ),
                     ],
                   ),
@@ -130,16 +135,25 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _showAddMeterDialog(
+      BuildContext context,
+      HomeViewModel viewModel,
+      ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AddMeterDialog(
+        viewModel: viewModel,
+      ),
+    );
+  }
+
   Widget _buildWelcome() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF2878E5),
-            Color(0xFF55A0F5),
-          ],
+          colors: [Color(0xFF2878E5), Color(0xFF55A0F5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -339,17 +353,38 @@ class HomeScreen extends StatelessWidget {
       child: const Column(
         children: [
           Icon(
-            Icons.search_off_outlined,
+            Icons.speed_outlined,
             size: 42,
             color: Colors.grey,
           ),
           SizedBox(height: 12),
           Text(
-            'Нет приборов в этой категории',
+            'Счётчиков пока нет. Нажми «Добавить счётчик», чтобы создать первый.',
             textAlign: TextAlign.center,
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildError(
+      String message,
+      HomeViewModel viewModel,
+      ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text(message),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: viewModel.loadMeters,
+              child: const Text('Повторить'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -371,8 +406,7 @@ class HomeScreen extends StatelessWidget {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Суммы рассчитаны по демонстрационным показаниям и тарифам. '
-                  'Они могут отличаться от фактических начислений.',
+              'Показания и история хранятся на устройстве. Стоимость рассчитана по указанному тарифу и не является официальным начислением.',
               style: TextStyle(
                 color: Color(0xFF304B70),
                 fontSize: 13,

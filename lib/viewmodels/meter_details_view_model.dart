@@ -1,33 +1,37 @@
-
 import 'package:flutter/foundation.dart';
 
 import '../models/meter.dart';
 import '../models/meter_reading.dart';
+import '../repositories/reading_repository.dart';
 
 class MeterDetailsViewModel extends ChangeNotifier {
-  MeterDetailsViewModel({
-    required this.meter,
-  })  : _currentReading = meter.lastReading,
-        _previousReading = meter.previousReading {
-    _readings = _createDemoReadings();
+  MeterDetailsViewModel({required this.meter, ReadingRepository? repository})
+    : _repository = repository ?? ReadingRepository() {
+    loadReadings();
   }
 
   final Meter meter;
+  final ReadingRepository _repository;
 
-  late final List<MeterReading> _readings;
+  List<MeterReading> _readings = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  double _currentReading;
-  double _previousReading;
+  List<MeterReading> get readings => List.unmodifiable(_readings);
 
-  List<MeterReading> get readings {
-    final result = List<MeterReading>.of(_readings);
-    result.sort((a, b) => b.date.compareTo(a.date));
-    return List.unmodifiable(result);
+  bool get isLoading => _isLoading;
+
+  String? get errorMessage => _errorMessage;
+
+  double get currentReading => _readings.isNotEmpty ? _readings.first.value : 0;
+
+  double get previousReading {
+    if (_readings.length > 1) {
+      return _readings[1].value;
+    }
+
+    return currentReading;
   }
-
-  double get currentReading => _currentReading;
-
-  double get previousReading => _previousReading;
 
   double get consumption => currentReading - previousReading;
 
@@ -35,50 +39,39 @@ class MeterDetailsViewModel extends ChangeNotifier {
 
   String get unit => meter.type.unit;
 
-  String get formattedConsumption =>
-      '${consumption.toStringAsFixed(2)} $unit';
+  String get formattedConsumption => '${consumption.toStringAsFixed(2)} $unit';
 
-  String get formattedCost =>
-      '${estimatedCost.toStringAsFixed(2)} ₽';
+  String get formattedCost => '${estimatedCost.toStringAsFixed(2)} ₽';
 
-  void addReading(double value) {
-    if (value < _currentReading) {
-      throw ArgumentError(
-        'Новое показание не может быть меньше предыдущего.',
-      );
-    }
-
-    _previousReading = _currentReading;
-    _currentReading = value;
-
-    _readings.add(
-      MeterReading(
-        id: '${meter.id}-${DateTime.now().microsecondsSinceEpoch}',
-        meterId: meter.id,
-        date: DateTime.now(),
-        value: value,
-      ),
-    );
-
+  Future<void> loadReadings() async {
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      _readings = await _repository.getForMeter(meter.id);
+    } catch (error) {
+      _errorMessage = 'Не удалось загрузить историю: $error';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  List<MeterReading> _createDemoReadings() {
-    final now = meter.lastSubmission;
+  Future<void> addReading(double value) async {
+    if (value < currentReading) {
+      throw ArgumentError('Новое показание не может быть меньше предыдущего.');
+    }
 
-    return [
-      MeterReading(
-        id: '${meter.id}-1',
-        meterId: meter.id,
-        date: now,
-        value: meter.lastReading,
-      ),
-      MeterReading(
-        id: '${meter.id}-2',
-        meterId: meter.id,
-        date: DateTime(now.year, now.month - 1, 25),
-        value: meter.previousReading,
-      ),
-    ];
+    final now = DateTime.now();
+
+    await _repository.add(
+      id: '${meter.id}-${now.microsecondsSinceEpoch}',
+      meterId: meter.id,
+      date: now,
+      value: value,
+    );
+
+    await loadReadings();
   }
 }
