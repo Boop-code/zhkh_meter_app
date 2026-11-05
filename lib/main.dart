@@ -1,14 +1,24 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'repositories/meter_repository.dart';
+import 'repositories/tariff_repository.dart';
 import 'screens/home_screen.dart';
 import 'viewmodels/home_view_model.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final tariffRepository = TariffRepository();
+
+  // Добавляем начальные тарифы, если их ещё нет.
+  tariffRepository.seedDefaultTariffs();
+
+  final meterRepository = MeterRepository(tariffRepository: tariffRepository);
+
   runApp(
     ChangeNotifierProvider(
-      create: (_) => HomeViewModel(),
+      create: (_) => HomeViewModel(repository: meterRepository),
       child: const ZhkhMeterApp(),
     ),
   );

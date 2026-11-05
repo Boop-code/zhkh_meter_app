@@ -1,14 +1,18 @@
 import '../data/databases/app_database.dart';
 import '../models/meter.dart';
+import 'tariff_repository.dart';
 
 class MeterRepository {
-  MeterRepository({AppDatabase? database})
-    : _database = database ?? AppDatabase.instance;
+  MeterRepository({AppDatabase? database, TariffRepository? tariffRepository})
+    : _database = database ?? AppDatabase.instance,
+      _tariffRepository = tariffRepository ?? TariffRepository();
 
   final AppDatabase _database;
+  final TariffRepository _tariffRepository;
 
   Future<List<Meter>> getAll() async {
     final db = await _database.database;
+
     final rows = await db.query(
       AppDatabase.metersTable,
       orderBy: 'name COLLATE NOCASE ASC',
@@ -18,6 +22,7 @@ class MeterRepository {
 
     for (final row in rows) {
       final id = row['id'] as String;
+
       final readingRows = await db.query(
         AppDatabase.readingsTable,
         where: 'meter_id = ?',
@@ -47,19 +52,31 @@ class MeterRepository {
           ? consumptions.sublist(consumptions.length - 6)
           : consumptions;
 
+      final resourceType = ResourceType.values.firstWhere(
+        (type) => type.name == row['type'],
+        orElse: () => ResourceType.water,
+      );
+
+      // Сначала ищем тариф в Realm.
+      // Если его там нет, используем старый тариф из SQLite.
+      final regionalTariff = _tariffRepository.getForResource(
+        region: TariffRepository.defaultRegion,
+        resourceType: resourceType.name,
+      );
+
+      final tariff =
+          regionalTariff?.baseCost ?? (row['tariff'] as num).toDouble();
+
       meters.add(
         Meter(
           id: id,
           name: row['name'] as String,
-          type: ResourceType.values.firstWhere(
-            (type) => type.name == row['type'],
-            orElse: () => ResourceType.water,
-          ),
+          type: resourceType,
           number: row['number'] as String,
           lastReading: current,
           previousReading: previous,
           lastSubmission: latestDate,
-          tariff: (row['tariff'] as num).toDouble(),
+          tariff: tariff,
           monthlyConsumption: [
             ...List<double>.filled(6 - lastSix.length, 0),
             ...lastSix,

@@ -179,7 +179,7 @@ class _MeterDetailsContent extends StatelessWidget {
                     ),
                     _infoRow(
                       'Тариф',
-                      '${_formatNumber(meter.tariff)} ₽/${viewModel.unit}',
+                      '${_formatNumber(meter.tariff)} BYN/${viewModel.unit}',
                     ),
                     const Divider(height: 24),
                     _infoRow(

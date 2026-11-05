@@ -41,7 +41,7 @@ class MeterDetailsViewModel extends ChangeNotifier {
 
   String get formattedConsumption => '${consumption.toStringAsFixed(2)} $unit';
 
-  String get formattedCost => '${estimatedCost.toStringAsFixed(2)} ₽';
+  String get formattedCost => '${estimatedCost.toStringAsFixed(2)} BYN';
 
   Future<void> loadReadings() async {
     _isLoading = true;

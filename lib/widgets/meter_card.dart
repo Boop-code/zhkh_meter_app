@@ -159,7 +159,7 @@ class MeterCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${_formatNumber(meter.estimatedCost)} ₽',
+                            '${_formatNumber(meter.estimatedCost)} BYN',
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 14,
@@ -191,7 +191,7 @@ class MeterCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Тариф: ${_formatNumber(meter.tariff)} ₽/$unit',
+                    'Тариф: ${_formatNumber(meter.tariff)} BYN/$unit',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],

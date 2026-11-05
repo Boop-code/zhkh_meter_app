@@ -67,7 +67,6 @@ class HomeViewModel extends ChangeNotifier {
     required String name,
     required ResourceType type,
     required String number,
-    required double tariff,
   }) async {
     final id = DateTime.now().microsecondsSinceEpoch.toString();
 
@@ -76,7 +75,7 @@ class HomeViewModel extends ChangeNotifier {
       name: name.trim(),
       type: type,
       number: number.trim(),
-      tariff: tariff,
+      tariff: 0,
     );
 
     await loadMeters();

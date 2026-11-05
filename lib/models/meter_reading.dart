@@ -1,4 +1,3 @@
-
 class MeterReading {
   const MeterReading({
     required this.id,

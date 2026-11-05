@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,7 +12,7 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   String _formatMoney(double value) {
-    return '${value.toStringAsFixed(2).replaceAll('.', ',')} ₽';
+    return '${value.toStringAsFixed(2).replaceAll('.', ',')} BYN';
   }
 
   @override
@@ -28,10 +27,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             Text(
               'Учёт ресурсов',
-              style: TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 3),
             Text(
@@ -75,27 +71,27 @@ class HomeScreen extends StatelessWidget {
             else if (viewModel.errorMessage != null)
               _buildError(viewModel.errorMessage!, viewModel)
             else if (meters.isEmpty)
-                _buildEmptyState()
-              else
-                ...meters.map(
-                      (meter) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: MeterCard(
-                      meter: meter,
-                      onTap: () async {
-                        await Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(
-                            builder: (_) => MeterDetailsScreen(meter: meter),
-                          ),
-                        );
+              _buildEmptyState()
+            else
+              ...meters.map(
+                (meter) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: MeterCard(
+                    meter: meter,
+                    onTap: () async {
+                      await Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => MeterDetailsScreen(meter: meter),
+                        ),
+                      );
 
-                        if (context.mounted) {
-                          await viewModel.loadMeters();
-                        }
-                      },
-                    ),
+                      if (context.mounted) {
+                        await viewModel.loadMeters();
+                      }
+                    },
                   ),
                 ),
+              ),
             const SizedBox(height: 12),
             _buildSectionHeader(
               title: 'История потребления',
@@ -136,14 +132,12 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> _showAddMeterDialog(
-      BuildContext context,
-      HomeViewModel viewModel,
-      ) async {
+    BuildContext context,
+    HomeViewModel viewModel,
+  ) async {
     await showDialog<void>(
       context: context,
-      builder: (_) => AddMeterDialog(
-        viewModel: viewModel,
-      ),
+      builder: (_) => AddMeterDialog(viewModel: viewModel),
     );
   }
 
@@ -161,11 +155,7 @@ class HomeScreen extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.home_work_outlined,
-            color: Colors.white,
-            size: 32,
-          ),
+          Icon(Icons.home_work_outlined, color: Colors.white, size: 32),
           SizedBox(height: 14),
           Text(
             'Контролируйте расходы',
@@ -178,11 +168,7 @@ class HomeScreen extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             'Все показания и расходы на коммунальные ресурсы в одном месте.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              height: 1.5,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
           ),
         ],
       ),
@@ -241,28 +227,16 @@ class HomeScreen extends StatelessWidget {
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 13,
-            ),
-          ),
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
           const SizedBox(height: 5),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Colors.grey, fontSize: 11),
           ),
         ],
       ),
@@ -278,27 +252,18 @@ class HomeScreen extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontSize: 13, color: Colors.grey),
         ),
       ],
     );
   }
 
-  Widget _buildFilters(
-      BuildContext context,
-      HomeViewModel viewModel,
-      ) {
+  Widget _buildFilters(BuildContext context, HomeViewModel viewModel) {
     const resourceTypes = [
       ResourceType.all,
       ResourceType.water,
@@ -325,9 +290,7 @@ class HomeScreen extends StatelessWidget {
               selectedColor: Theme.of(context).colorScheme.primary,
               backgroundColor: Colors.white,
               labelStyle: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : const Color(0xFF263247),
+                color: isSelected ? Colors.white : const Color(0xFF263247),
                 fontWeight: FontWeight.w500,
               ),
               side: BorderSide(
@@ -352,11 +315,7 @@ class HomeScreen extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(
-            Icons.speed_outlined,
-            size: 42,
-            color: Colors.grey,
-          ),
+          Icon(Icons.speed_outlined, size: 42, color: Colors.grey),
           SizedBox(height: 12),
           Text(
             'Счётчиков пока нет. Нажми «Добавить счётчик», чтобы создать первый.',
@@ -368,10 +327,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildError(
-      String message,
-      HomeViewModel viewModel,
-      ) {
+  Widget _buildError(String message, HomeViewModel viewModel) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -399,10 +355,7 @@ class HomeScreen extends StatelessWidget {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline,
-            color: Color(0xFF2878E5),
-          ),
+          Icon(Icons.info_outline, color: Color(0xFF2878E5)),
           SizedBox(width: 12),
           Expanded(
             child: Text(

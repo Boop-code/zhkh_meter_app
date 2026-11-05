@@ -1,4 +1,3 @@
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -13,8 +12,9 @@ class MeterScanScreen extends StatefulWidget {
 class _MeterScanScreenState extends State<MeterScanScreen>
     with WidgetsBindingObserver {
   CameraController? _cameraController;
-  final TextRecognizer _textRecognizer =
-  TextRecognizer(script: TextRecognitionScript.latin);
+  final TextRecognizer _textRecognizer = TextRecognizer(
+    script: TextRecognitionScript.latin,
+  );
   final TextEditingController _readingController = TextEditingController();
 
   bool _initializing = true;
@@ -39,7 +39,7 @@ class _MeterScanScreenState extends State<MeterScanScreen>
       }
 
       final camera = _cameras.firstWhere(
-            (item) => item.lensDirection == CameraLensDirection.back,
+        (item) => item.lensDirection == CameraLensDirection.back,
         orElse: () => _cameras.first,
       );
 
@@ -68,7 +68,7 @@ class _MeterScanScreenState extends State<MeterScanScreen>
         _initializing = false;
         _errorMessage = switch (error.code) {
           'CameraAccessDenied' =>
-          'Нет доступа к камере. Разреши его в настройках приложения.',
+            'Нет доступа к камере. Разреши его в настройках приложения.',
           _ => 'Не удалось открыть камеру: ${error.description ?? error.code}',
         };
       });
@@ -102,9 +102,7 @@ class _MeterScanScreenState extends State<MeterScanScreen>
   Future<void> _captureAndRecognize() async {
     final controller = _cameraController;
 
-    if (controller == null ||
-        !controller.value.isInitialized ||
-        _processing) {
+    if (controller == null || !controller.value.isInitialized || _processing) {
       return;
     }
 
@@ -136,15 +134,14 @@ class _MeterScanScreenState extends State<MeterScanScreen>
           );
         } else {
           _errorMessage =
-          'Цифры не найдены. Попробуй сделать снимок ближе к табло.';
+              'Цифры не найдены. Попробуй сделать снимок ближе к табло.';
         }
       });
     } on CameraException catch (error) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage =
-        'Ошибка камеры: ${error.description ?? error.code}';
+        _errorMessage = 'Ошибка камеры: ${error.description ?? error.code}';
       });
     } catch (error) {
       if (!mounted) return;
@@ -189,9 +186,7 @@ class _MeterScanScreenState extends State<MeterScanScreen>
     final cameraController = _cameraController;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Сканирование счётчика'),
-      ),
+      appBar: AppBar(title: const Text('Сканирование счётчика')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -207,78 +202,78 @@ class _MeterScanScreenState extends State<MeterScanScreen>
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMessage != null && cameraController == null
                   ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    _errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              )
-                  : cameraController != null &&
-                  cameraController.value.isInitialized
-                  ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  CameraPreview(cameraController),
-                  Center(
-                    child: Container(
-                      width: 250,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.greenAccent,
-                          width: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          _errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white),
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    )
+                  : cameraController != null &&
+                        cameraController.value.isInitialized
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CameraPreview(cameraController),
+                        Center(
+                          child: Container(
+                            width: 250,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.greenAccent,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Center(
+                      child: Text(
+                        'Камера недоступна',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
-                  ),
-                ],
-              )
-                  : const Center(
-                child: Text(
-                  'Камера недоступна',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
             ),
             const SizedBox(height: 12),
             const Text(
               'Направь камеру на дисплей счётчика. Постарайся, чтобы цифры '
-                  'были чёткими и хорошо освещёнными.',
+              'были чёткими и хорошо освещёнными.',
               style: TextStyle(height: 1.5),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: _initializing ||
-                  _processing ||
-                  cameraController == null ||
-                  !cameraController.value.isInitialized
+              onPressed:
+                  _initializing ||
+                      _processing ||
+                      cameraController == null ||
+                      !cameraController.value.isInitialized
                   ? null
                   : _captureAndRecognize,
               icon: _processing
                   ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.document_scanner_outlined),
               label: Text(
-                _processing ? 'Распознавание...' : 'Сфотографировать и распознать',
+                _processing
+                    ? 'Распознавание...'
+                    : 'Сфотографировать и распознать',
               ),
             ),
             const SizedBox(height: 24),
             const Text(
               'Распознанное показание',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -297,10 +292,7 @@ class _MeterScanScreenState extends State<MeterScanScreen>
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: 10),
-              Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
+              Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
             ],
             if (_recognizedText.isNotEmpty) ...[
               const SizedBox(height: 16),

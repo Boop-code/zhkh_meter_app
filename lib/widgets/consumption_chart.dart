@@ -1,14 +1,10 @@
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../models/meter.dart';
 
 class ConsumptionChart extends StatelessWidget {
-  const ConsumptionChart({
-    super.key,
-    required this.meter,
-  });
+  const ConsumptionChart({super.key, required this.meter});
 
   final Meter meter;
 
@@ -21,14 +17,7 @@ class ConsumptionChart extends StatelessWidget {
 
     final chartColor = meter.type.color;
 
-    const months = [
-      'Май',
-      'Июн',
-      'Июл',
-      'Авг',
-      'Сен',
-      'Окт',
-    ];
+    const months = ['Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,8 +33,7 @@ class ConsumptionChart extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval:
-                maxValue > 0 ? maxValue / 4 : 2.5,
+                horizontalInterval: maxValue > 0 ? maxValue / 4 : 2.5,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
                     color: Colors.grey.withValues(alpha: 0.15),

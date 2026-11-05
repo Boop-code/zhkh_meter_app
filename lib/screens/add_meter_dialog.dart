@@ -1,14 +1,10 @@
-
 import 'package:flutter/material.dart';
 
 import '../models/meter.dart';
 import '../viewmodels/home_view_model.dart';
 
 class AddMeterDialog extends StatefulWidget {
-  const AddMeterDialog({
-    super.key,
-    required this.viewModel,
-  });
+  const AddMeterDialog({super.key, required this.viewModel});
 
   final HomeViewModel viewModel;
 
@@ -20,7 +16,6 @@ class _AddMeterDialogState extends State<AddMeterDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _numberController = TextEditingController();
-  final _tariffController = TextEditingController();
 
   ResourceType _selectedType = ResourceType.water;
   bool _saving = false;
@@ -29,7 +24,6 @@ class _AddMeterDialogState extends State<AddMeterDialog> {
   void dispose() {
     _nameController.dispose();
     _numberController.dispose();
-    _tariffController.dispose();
     super.dispose();
   }
 
@@ -37,10 +31,6 @@ class _AddMeterDialogState extends State<AddMeterDialog> {
     if (_saving || !_formKey.currentState!.validate()) {
       return;
     }
-
-    final tariff = double.parse(
-      _tariffController.text.trim().replaceAll(',', '.'),
-    );
 
     setState(() {
       _saving = true;
@@ -51,7 +41,6 @@ class _AddMeterDialogState extends State<AddMeterDialog> {
         name: _nameController.text,
         type: _selectedType,
         number: _numberController.text,
-        tariff: tariff,
       );
 
       if (!mounted) return;
@@ -61,9 +50,7 @@ class _AddMeterDialogState extends State<AddMeterDialog> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Не удалось сохранить счётчик: $error'),
-        ),
+        SnackBar(content: Text('Не удалось сохранить счётчик: $error')),
       );
 
       setState(() {
@@ -90,69 +77,52 @@ class _AddMeterDialogState extends State<AddMeterDialog> {
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Введи название';
+                    return 'Введите название';
                   }
+
                   return null;
                 },
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _numberController,
-                decoration: const InputDecoration(
-                  labelText: 'Номер счётчика',
-                ),
+                decoration: const InputDecoration(labelText: 'Номер счётчика'),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Введи номер';
+                    return 'Введите номер';
                   }
+
                   return null;
                 },
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<ResourceType>(
                 initialValue: _selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'Тип ресурса',
-                ),
+                decoration: const InputDecoration(labelText: 'Тип ресурса'),
                 items: ResourceType.values
                     .where((type) => type != ResourceType.all)
                     .map(
                       (type) => DropdownMenuItem<ResourceType>(
-                    value: type,
-                    child: Text(type.title),
-                  ),
-                )
+                        value: type,
+                        child: Text(type.title),
+                      ),
+                    )
                     .toList(),
                 onChanged: _saving
                     ? null
                     : (value) {
-                  if (value == null) return;
+                        if (value == null) return;
 
-                  setState(() {
-                    _selectedType = value;
-                  });
-                },
+                        setState(() {
+                          _selectedType = value;
+                        });
+                      },
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _tariffController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Тариф, ₽/${_selectedType.unit}',
-                ),
-                validator: (value) {
-                  final tariff = double.tryParse(
-                    (value ?? '').trim().replaceAll(',', '.'),
-                  );
-
-                  if (tariff == null || tariff < 0) {
-                    return 'Введи корректный тариф';
-                  }
-
-                  return null;
-                },
+              const Text(
+                'Тариф будет определён автоматически '
+                'по региону и типу ресурса.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -160,19 +130,17 @@ class _AddMeterDialogState extends State<AddMeterDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _saving
-              ? null
-              : () => Navigator.of(context).pop(),
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: const Text('Отмена'),
         ),
         FilledButton(
           onPressed: _saving ? null : _saveMeter,
           child: _saving
               ? const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Сохранить'),
         ),
       ],
