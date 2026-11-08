@@ -1,0 +1,25 @@
+{
+  "meters": [
+    {
+      "id": "server-water-001",
+      "name": "Счётчик холодной воды",
+      "type": "water",
+      "number": "API-WATER-001",
+      "tariff": 0
+    },
+    {
+      "id": "server-gas-001",
+      "name": "Газовый счётчик",
+      "type": "gas",
+      "number": "API-GAS-001",
+      "tariff": 0
+    },
+    {
+      "id": "server-electricity-001",
+      "name": "Электросчётчик",
+      "type": "electricity",
+      "number": "API-ELECTRICITY-001",
+      "tariff": 0
+    }
+  ]
+}

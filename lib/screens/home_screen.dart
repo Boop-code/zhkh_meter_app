@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../models/meter.dart';
 import '../viewmodels/home_view_model.dart';
-import '../widgets/consumption_chart.dart';
 import '../widgets/meter_card.dart';
 import 'add_meter_dialog.dart';
 import 'meter_details_screen.dart';
@@ -92,37 +91,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            const SizedBox(height: 12),
-            _buildSectionHeader(
-              title: 'История потребления',
-              subtitle: 'Динамика по последним показаниям',
-            ),
-            const SizedBox(height: 12),
-            if (meters.isNotEmpty && !viewModel.isLoading)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        meters.first.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        height: 220,
-                        child: ConsumptionChart(meter: meters.first),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              _buildEmptyState(),
             const SizedBox(height: 16),
             _buildNotice(),
           ],

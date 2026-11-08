@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/meter.dart';
 import '../models/meter_reading.dart';
 import '../viewmodels/meter_details_view_model.dart';
+import '../widgets/consumption_chart.dart';
 import 'meter_scan_screen.dart';
 
 class MeterDetailsScreen extends StatelessWidget {
@@ -77,6 +78,7 @@ class _MeterDetailsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewModel = context.watch<MeterDetailsViewModel>();
     final meter = viewModel.meter;
+
     final latestDate = viewModel.readings.isNotEmpty
         ? viewModel.readings.first.date
         : null;
@@ -191,6 +193,29 @@ class _MeterDetailsContent extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 24),
+
+            // График потребления именно этого счётчика.
+            const Text(
+              'График потребления',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Реальный расход по сохранённым показаниям.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: ConsumptionChart(
+                  key: ValueKey('chart-${meter.id}'),
+                  meter: meter,
+                ),
+              ),
+            ),
+
             const SizedBox(height: 24),
             const Text(
               'История показаний',

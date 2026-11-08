@@ -7,7 +7,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _databaseName = 'zhkh_meter.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   static const String metersTable = 'meters';
   static const String readingsTable = 'meter_readings';
@@ -29,6 +29,7 @@ class AppDatabase {
         await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: _createDatabase,
+      onUpgrade: _upgradeDatabase,
     );
 
     return _database!;
@@ -42,7 +43,8 @@ class AppDatabase {
         type TEXT NOT NULL,
         number TEXT NOT NULL,
         tariff REAL NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'user'
       )
     ''');
 
@@ -64,14 +66,77 @@ class AppDatabase {
     ''');
   }
 
+  Future<void> _upgradeDatabase(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        ALTER TABLE $metersTable
+        ADD COLUMN source TEXT NOT NULL DEFAULT 'user'
+      ''');
+    }
+  }
+
+  /// Добавляет или обновляет начальные счётчики, полученные через REST API.
+  ///
+  /// Пользовательские счётчики не изменяются.
+  /// Существующие показания также сохраняются.
+  Future<void> upsertInitialMeters(List<Map<String, Object?>> meters) async {
+    final db = await database;
+
+    await db.transaction((transaction) async {
+      for (final meter in meters) {
+        final id = meter['id'] as String;
+
+        final existing = await transaction.query(
+          metersTable,
+          columns: ['source', 'created_at'],
+          where: 'id = ?',
+          whereArgs: [id],
+          limit: 1,
+        );
+
+        // Если запись с таким ID уже принадлежит пользователю,
+        // не изменяем её.
+        if (existing.isNotEmpty && existing.first['source'] != 'api') {
+          continue;
+        }
+
+        final values = <String, Object?>{
+          'id': id,
+          'name': meter['name'],
+          'type': meter['type'],
+          'number': meter['number'],
+          'tariff': meter['tariff'] ?? 0,
+          'created_at': existing.isNotEmpty
+              ? existing.first['created_at']
+              : DateTime.now().toIso8601String(),
+          'source': 'api',
+        };
+
+        if (existing.isEmpty) {
+          await transaction.insert(metersTable, values);
+        } else {
+          await transaction.update(
+            metersTable,
+            values,
+            where: 'id = ?',
+            whereArgs: [id],
+          );
+        }
+      }
+    });
+  }
+
   Future<int> insertMeter(Map<String, Object?> values) async {
     final db = await database;
 
-    return db.insert(
-      metersTable,
-      values,
-      conflictAlgorithm: ConflictAlgorithm.abort,
-    );
+    return db.insert(metersTable, {
+      ...values,
+      'source': 'user',
+    }, conflictAlgorithm: ConflictAlgorithm.abort);
   }
 
   Future<List<Map<String, Object?>>> getMeters() async {
